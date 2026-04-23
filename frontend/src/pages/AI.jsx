@@ -1,48 +1,35 @@
-import React, { useState } from "react";
-import API from "../api";
+const askAI = async () => {
+  try {
+    if (!query.trim()) {
+      setAnswer("Please enter a question");
+      return;
+    }
 
-const AI = () => {
-  const [query, setQuery] = useState("");
-  const [answer, setAnswer] = useState("");
+    const res = await API.post("/ai/query", {
+      query: query
+    });
 
-  const askAI = async () => {
-    try {
-      // ✅ correct GET request with query param
-      const res = await API.get(`/ai/query?query=${query}`);
+    console.log("AI RESPONSE:", res.data);
 
-      console.log(res.data);
+    // ✅ Handle all possible backend responses
+    if (res.data.answer) {
+      setAnswer(res.data.answer);
+    } else if (res.data.response) {
+      setAnswer(res.data.response);
+    } else if (res.data.error) {
+      setAnswer("Error: " + res.data.error);
+    } else {
+      setAnswer("No valid response from AI");
+    }
 
-      // ✅ handle different response formats
-      setAnswer(
-        res.data.response ||
-        res.data.answer ||
-        JSON.stringify(res.data)
-      );
+  } catch (err) {
+    console.error("AI ERROR:", err);
 
-    } catch (err) {
-      console.error(err);
+    // ✅ Show actual backend error if exists
+    if (err.response?.data?.detail) {
+      setAnswer("Error: " + err.response.data.detail);
+    } else {
       setAnswer("AI error, try again");
     }
-  };
-
-  return (
-    <div style={{ textAlign: "center" }}>
-      <h2>AI Assistant</h2>
-
-      <input
-        type="text"
-        placeholder="Ask something..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={askAI}>Ask</button>
-
-      <p>{answer}</p>
-    </div>
-  );
+  }
 };
-
-export default AI;
