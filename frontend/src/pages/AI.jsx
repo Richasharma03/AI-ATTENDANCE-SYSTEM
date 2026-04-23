@@ -7,13 +7,21 @@ const AI = () => {
 
   const askAI = async () => {
     try {
-      const res = await API.post("/ai/query", null, {
-        params: { query }
-      });
+      // ✅ correct GET request with query param
+      const res = await API.get(`/ai/query?query=${query}`);
 
-      setAnswer(res.data.answer);
+      console.log(res.data);
+
+      // ✅ handle different response formats
+      setAnswer(
+        res.data.response ||
+        res.data.answer ||
+        JSON.stringify(res.data)
+      );
+
     } catch (err) {
-      setAnswer("Error");
+      console.error(err);
+      setAnswer("AI error, try again");
     }
   };
 
