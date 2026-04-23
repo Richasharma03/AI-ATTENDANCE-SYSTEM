@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pymongo
+python-dotenv
+opencv-python-headless
+numpy
+python-multipart
+requests
+python-jose
+passlib[bcrypt]
+pandas
