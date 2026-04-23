@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.database import attendance_collection
 from app.dependencies.auth import get_current_user
-from openai import OpenAI
+import requests
 import os
 from dotenv import load_dotenv
 
@@ -9,13 +9,18 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 
 load_dotenv()
 
-# ✅ Correct key
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
 @router.post("/query")
-async def ai_query(query: str, current_user: dict = Depends(get_current_user)):
+async def ai_query(body: dict, current_user: dict = Depends(get_current_user)):
     try:
+        query = body.get("query")
+
+        if not query:
+            return {"answer": "No query provided"}
+
+        # get attendance data
         data = list(attendance_collection.find())
 
         for d in data:
@@ -38,15 +43,27 @@ User Question:
 {query}
 """
 
-        # ✅ OpenAI direct call (FIXED)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "openai/gpt-3.5-turbo",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ]
+            }
         )
 
-        answer = response.choices[0].message.content
+        result = response.json()
+        print("AI RAW RESPONSE:", result)  # 🔥 important debug
+
+        if "choices" not in result:
+            return {"answer": "AI error: No response from model"}
+
+        answer = result["choices"][0]["message"]["content"]
 
         return {"answer": answer}
 
