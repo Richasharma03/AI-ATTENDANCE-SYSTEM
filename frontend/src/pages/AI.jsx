@@ -5,13 +5,12 @@ const askAI = async () => {
       return;
     }
 
-    const res = await API.post("/ai/query", {
-      query: query
+    const res = await API.post("/ai/query", null, {
+      params: { query: query }   // ✅ FIX HERE
     });
 
     console.log("AI RESPONSE:", res.data);
 
-    // ✅ Handle all possible backend responses
     if (res.data.answer) {
       setAnswer(res.data.answer);
     } else if (res.data.response) {
@@ -25,7 +24,6 @@ const askAI = async () => {
   } catch (err) {
     console.error("AI ERROR:", err);
 
-    // ✅ Show actual backend error if exists
     if (err.response?.data?.detail) {
       setAnswer("Error: " + err.response.data.detail);
     } else {
